@@ -1,0 +1,15 @@
+muguess 10.0
+mugmin 9.0
+mugmax 11.0
+precision 1
+sigmaguess 0.1
+designstim 13.0
+designprob 99.9
+designmatrix d
+#datafile /home/sjue/sensitivity/dec2017/data-logit-sig/ntrials20/t54.txt
+#datafile blah.txt
+modelform logit
+reducebias 1
+nclint 4
+fontsize 14
+guisize 1200x900
