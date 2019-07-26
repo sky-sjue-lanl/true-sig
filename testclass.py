@@ -693,6 +693,8 @@ class dettest:
    fout.write("neyer? "+str(self.neyer)+"\n")
    fout.write("pre-phase is now "+str(self.phase)+"\n")
   #the following "if" is to help with recalcitrant users
+  if self.phase != "0" and self.npoints == 0:
+   self.phase="0"
   if self.fmax() <= self.smin() and \
      (self.phase[0]=="3" or self.phase[0]=="4"): 
    self.phase="0"
