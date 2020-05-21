@@ -14,7 +14,11 @@ except ImportError:
 import matplotlib as mpl
 import numpy as np
 mpl.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+try:
+  from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg as NavToolbar2Tk
+except:
+  from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavToolbar2Tk
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 
@@ -498,9 +502,9 @@ t=np.arange(0.0,6.28,0.01)
 s=np.sin(t)
 a.plot(t,s)
 mcanvas=FigureCanvasTkAgg(f, master=p4f1)
-mcanvas.show()
+mcanvas.draw()
 mcanvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-toolbar=NavigationToolbar2TkAgg(mcanvas, p4f1)
+toolbar=NavToolbar2Tk(mcanvas, p4f1)
 toolbar.update()
 mcanvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 def on_key_event(event):
@@ -598,7 +602,7 @@ def freshplot():
    a.axes.set_xlabel(axlabel)
   if len(aylabel) > 0:
    a.axes.set_ylabel(aylabel)
-  mcanvas.show()
+  mcanvas.draw()
 
 p4l1=ttk.Label(p4f0, text="          ")
 p4l1.pack(side=TOP)
