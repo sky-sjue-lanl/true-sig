@@ -62,7 +62,6 @@ class Ui_MainWindow(object):
     def getconf(self):
         if self.updatevariableDict():
             while 10.0**(-float(self.lineEditMuprecision.text())) > float(self.lineEditSigmabestguess.text())/5.0:
-                print("debug ",self.lineEditMuprecision.text()," debug ",self.lineEditSigmabestguess.text())
                 self.lineEditMuprecision.setText(str(int(self.lineEditMuprecision.text())+1))
             try: self.lconfig[0]=float(self.lineEditMubestguess.text())
             except: self.lconfig[0]=0.0
@@ -116,7 +115,6 @@ class Ui_MainWindow(object):
             for aline in lines:
                 astring+=aline
             self.plainTextEditCurrentdata.setPlainText(astring)
-        print("finished f2fdata. fname = ",fname)
 
     def data2f(self):
         fname,filter = QtWidgets.QFileDialog.getSaveFileName(MainWindow,"Select File")
@@ -126,7 +124,7 @@ class Ui_MainWindow(object):
             fout.write(dtext)
             fout.close()
         except:
-            print("No file selected")
+            pass
 
     def mkdataobj(self):
         """turn text box data from page2 into organized data in object thisclass"""
@@ -146,13 +144,9 @@ class Ui_MainWindow(object):
     def resuggest(self):
         if self.updatevariableDict():
             self.getconf()
-            print("sguess1 = ",thistest.sguess)
             self.mkdataobj()
-            print("sguess2 = ",thistest.sguess)
             thistest.reducebias = self.ibias
-            print("sguess3 = ",thistest.sguess)
             thesug=thistest.nextpoint()
-            print("sguess4 = ",thistest.sguess)
             blah="{:."+self.lineEditMuprecision.text()+"f}"
             testsug = blah.format(thesug)
             self.stimval = str(testsug)
@@ -184,6 +178,7 @@ class Ui_MainWindow(object):
                 self.resuggest()
 
     def getclevels(self):
+        #TODO crashes if it only has 1 data point
         if self.updatevariableDict():
             try:
                 c1=thistest.cltcl()
@@ -253,13 +248,11 @@ class Ui_MainWindow(object):
             if self.checkBoxMlmodelsprobit.isChecked():
                 vals=thistest.probmusig() 
                 mu=vals[0]; sigma=vals[1]
-                print("prob "+str(mu)+" "+str(sigma))
                 f1=thistest.arr2pg(t, mu, sigma)
                 self.sc.axes.plot(t,f1)
             if self.checkBoxMlmodelslogit.isChecked():
                 vals=thistest.logmusig()
                 mu=vals[0]; sigma=vals[1]
-                print("log "+str(mu)+" "+str(sigma))
                 f1=thistest.arr2pl(t, mu, sigma)
                 self.sc.axes.plot(t,f1) 
             if self.checkBoxLessbiasedprobit.isChecked():
@@ -1022,22 +1015,15 @@ class Ui_MainWindow(object):
     def initialImport(self, MainWindow):
         #TODO fix font scaling
         try:
-            print("trying to load")
             finput=open("tsconfig.txt","r")
             lines=finput.readlines()
             finput.close()
-            print("trying to load - reading over imported text")
             for aline in lines:
-                print("1")
                 vals=aline.split()
-                print(vals)
                 if vals[0][0] != '#':
-                    print("2")
                     if vals[0].find("muguess") > -1:
-                        print("inmuguess")
                         self.lineEditMubestguess.setText(vals[1].strip())
                     if vals[0].find("mugmin") > -1:
-                        print("inmumin")
                         self.lineEditMuminguess.setText(vals[1].strip())
                     if vals[0].find("mugmax") > -1:
                         self.lineEditMumaxguess.setText(vals[1].strip())
