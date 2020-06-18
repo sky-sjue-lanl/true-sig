@@ -476,9 +476,12 @@ p4cb6.pack(side=TOP, anchor=W)
 iwritevals=IntVar()
 p4cb7=ttk.Checkbutton(p4f0, text="write values", variable=iwritevals)
 p4cb7.pack(side=TOP, anchor=W)
+#modify to add threshold mode
+iwritethresh=IntVar()
+p4cb8=ttk.Checkbutton(p4f0, text="threshold", variable=iwritethresh)
+p4cb8.pack(side=TOP, anchor=W)
 p4l6=ttk.Label(p4f0, text="          ")
 p4l6.pack(side=TOP, anchor=W)
-###IGGY WORK HERE
 xaxstr=StringVar()
 p4l7=ttk.Label(p4f0, text="x axis label")
 p4l7.pack(side=TOP, anchor=W)
@@ -532,23 +535,27 @@ def freshplot():
   if iplotprob.get():
    vals=thistest.probmusig() 
    mu=vals[0]; sigma=vals[1]
+   a0,a1,a2=thistest.fishprob(mu, sigma)
    print("prob "+str(mu)+" "+str(sigma))
    f1=thistest.arr2pg(t, mu, sigma)
    a.plot(t,f1)
   if iplotlog.get():
    vals=thistest.logmusig()
    mu=vals[0]; sigma=vals[1]
+   a0,a1,a2=thistest.fishlog(mu, sigma)
    print("log "+str(mu)+" "+str(sigma))
    f1=thistest.arr2pl(t, mu, sigma)
    a.plot(t,f1) 
   if iplotbrprob.get():
    vals=thistest.brprob() 
    mu=vals[0]; sigma=vals[1]
+   a0,a1,a2=thistest.fishprob(mu, sigma)
    f1=thistest.arr2pg(t, mu, sigma)
    a.plot(t,f1)
   if iplotbrlog.get():
    vals=thistest.brlog()
    mu=vals[0]; sigma=vals[1]
+   a0,a1,a2=thistest.fishlog(mu, sigma)
    f1=thistest.arr2pl(t, mu, sigma)
    a.plot(t,f1)
   if ifreezebounds.get():
@@ -596,6 +603,18 @@ def freshplot():
     labelstring="$\mu="+str(lmu)+", \sigma="+str(lsig)+"$"
     if iplotmargin.get(): labelstring+=marginstring
     a.text(amin+0.05*(amax-amin), bmax-0.1*(bmax-bmin), labelstring)
+  if iwritethresh.get():
+   amin,amax=a.get_xlim()
+   bmin,bmax=a.get_ylim()
+   if iplotmodel:
+    blah="{:."+mufuzz.get()+"f}"
+    lmu=blah.format(mu)
+    deltamu=blah.format(1.0/sqrt(a0))
+    threshstring="threshold is $\mu="+str(lmu)+" \pm "+str(deltamu)+"$"
+    a.text(mu+0.1*(amax-amin), 0.5, threshstring)
+    
+    
+   
   axlabel=xaxstr.get() 
   aylabel=yaxstr.get() 
   if len(axlabel) > 0:
