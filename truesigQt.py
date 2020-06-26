@@ -19,7 +19,7 @@ class MplCanvas(FigureCanvasQTAgg):
 
 class Ui_MainWindow(object):
     def __init__(self):
-        #TODO use this variabledict instead of lineedits everywhere and use updatevardict fxn to set vars/lineedits
+        #can use variabledict instead of lineedits
         self.variableDict={'muBest': float('NaN'), 'muMax': float('NaN'), 'muMin': float('NaN'), 'muPrec': float('NaN'), 'sigmaBest': float('NaN'), 'designStim': float('NaN'), 'designProb': float('NaN'), 'experimentModel': float('NaN'), 'experimentDesign': float('NaN'), 'experimentBias': bool(1), 'suggestionStimulus': float('NaN')}
         self.previousTab = 0
 
@@ -27,12 +27,9 @@ class Ui_MainWindow(object):
         self.muMax= None
         self.muMin= None
         self.muPrec= None
-        #TODO muprec and designprob initializations
-        # muPrec.set(int(log10(1.0/thistest.mufuzz)))
         self.sigmaBest= None
         self.designStim= None
         self.designProb= None
-        # designProb.set(str(thistest.dprob))
         self.dprobwarn= None
         self.modelval= None
         self.designval= None
@@ -44,6 +41,7 @@ class Ui_MainWindow(object):
         self.datacomment= None
         self.modelforms=["logit", "probit"]
         self.ourdesigns=["c optimal","sigma optimal","d optimal"]
+
 
         #0 muBest, 1 muMax, 2 muMin, 3 muPrec, 4 sigmaBest, 5 designStim, 6 designProb
         self.lconfig=[0,0,0,1,1,0,0]
@@ -178,8 +176,7 @@ class Ui_MainWindow(object):
                 self.resuggest()
 
     def getclevels(self):
-        #TODO crashes if it only has 1 data point
-        if self.updatevariableDict():
+        if self.updatevariableDict() and self.plainTextEditCurrentdata.toPlainText().count('\n') > 2:
             try:
                 c1=thistest.cltcl()
                 c1=0.01*int(c1/0.0001)
@@ -196,7 +193,7 @@ class Ui_MainWindow(object):
             except:
                 pass
         else:
-            MainWindow.statusBar().showMessage('Cannot calculate: Missing parameters and/or data points') 
+            MainWindow.statusBar().showMessage('Cannot calculate: Missing parameters and/or need more than 2 data points') 
 
     def add2data(self,afloat):
         if self.updatevariableDict():
@@ -215,12 +212,22 @@ class Ui_MainWindow(object):
 
     def addsuccess(self):
         if self.updatevariableDict():
+            try:
+                self.variableDict['suggestionStimulus'] = float(self.lineEditSuggestedstimulus.text())
+            except:
+                MainWindow.statusBar().showMessage('Cannot calculate: Suggested Stimulus is empty') 
+                return False  
             self.add2data(1.0)
             self.labelPassfailholder.setText("added success at "+self.stimval)
             self.resuggest()
 
     def addfailure(self):
         if self.updatevariableDict():
+            try:
+                self.variableDict['suggestionStimulus'] = float(self.lineEditSuggestedstimulus.text())
+            except:
+                MainWindow.statusBar().showMessage('Cannot calculate: Suggested Stimulus is empty') 
+                return False  
             self.add2data(0.0)
             self.labelPassfailholder.setText("added failure at "+self.stimval)
             self.resuggest()
@@ -234,6 +241,9 @@ class Ui_MainWindow(object):
         if (self.checkBoxMlmodelsprobit.isChecked() or self.checkBoxMlmodelslogit.isChecked()): iplotmodel=1
         if (self.checkBoxLessbiasedprobit.isChecked() or self.checkBoxLessbiasedlogit.isChecked()): iplotmodel=1
         if thistest.npoints > 0:
+            a0=0
+            a1=0
+            a2=0
             if self.checkBoxFreezeaxes.isChecked():
                 amin,amax=self.sc.axes.get_xlim()
                 bmin,bmax=self.sc.axes.get_ylim()
@@ -248,27 +258,31 @@ class Ui_MainWindow(object):
             if self.checkBoxMlmodelsprobit.isChecked():
                 vals=thistest.probmusig() 
                 mu=vals[0]; sigma=vals[1]
+                a0,a1,a2=thistest.fishprob(mu, sigma)
                 f1=thistest.arr2pg(t, mu, sigma)
                 self.sc.axes.plot(t,f1)
             if self.checkBoxMlmodelslogit.isChecked():
                 vals=thistest.logmusig()
                 mu=vals[0]; sigma=vals[1]
+                a0,a1,a2=thistest.fishlog(mu, sigma)
                 f1=thistest.arr2pl(t, mu, sigma)
                 self.sc.axes.plot(t,f1) 
             if self.checkBoxLessbiasedprobit.isChecked():
                 vals=thistest.brprob() 
                 mu=vals[0]; sigma=vals[1]
+                a0,a1,a2=thistest.fishprob(mu, sigma)
                 f1=thistest.arr2pg(t, mu, sigma)
                 self.sc.axes.plot(t,f1)
             if self.checkBoxLessbiasedlogit.isChecked():
                 vals=thistest.brlog()
                 mu=vals[0]; sigma=vals[1]
+                a0,a1,a2=thistest.fishlog(mu, sigma)
                 f1=thistest.arr2pl(t, mu, sigma)
                 self.sc.axes.plot(t,f1)
             if self.checkBoxFreezeaxes.isChecked():
                 self.sc.axes.set_xlim((amin,amax))
                 self.sc.axes.set_ylim((bmin,bmax))
-            if self.checkBoxShowmargin.isChecked():
+            if self.checkBoxShowmargin.isChecked() and (self.checkBoxLessbiasedlogit.isChecked() or self.checkBoxLessbiasedprobit.isChecked() or self.checkBoxMlmodelslogit.isChecked() or self.checkBoxMlmodelsprobit.isChecked()):
                 marginstring=""
                 stxsd=(self.lineEditDesignstim.text()).strip()
                 stypd=(self.lineEditDesignprob.text()).strip()
@@ -310,6 +324,15 @@ class Ui_MainWindow(object):
                     labelstring="$\mu="+str(lmu)+", \sigma="+str(lsig)+"$"
                     if self.checkBoxShowmargin.isChecked(): labelstring+=marginstring
                     self.sc.axes.text(amin+0.05*(amax-amin), bmax-0.1*(bmax-bmin), labelstring)
+            if self.checkBoxWritethresh.isChecked():
+                amin,amax=self.sc.axes.get_xlim()
+                bmin,bmax=self.sc.axes.get_ylim()
+                if iplotmodel:
+                    blah="{:."+self.lineEditMuprecision.text()+"f}"
+                    lmu=blah.format(mu)
+                    deltamu=blah.format(1.0/sqrt(a0))
+                    threshstring="threshold is $\mu="+str(lmu)+" \pm "+str(deltamu)+"$"
+                    self.sc.axes.text(mu+0.1*(amax-amin), 0.5, threshstring)
             axlabel=self.lineEditXaxislabel.text() 
             aylabel=self.lineEditYaxislabel.text()
             if len(axlabel) > 0:
@@ -812,12 +835,21 @@ class Ui_MainWindow(object):
         self.checkBoxFreezeaxes.setFont(font)
         self.checkBoxFreezeaxes.setObjectName("checkBoxFreezeaxes")
         self.verticalLayout_13.addWidget(self.checkBoxFreezeaxes)
+
         self.checkBoxWritevalues = QtWidgets.QCheckBox(self.groupBox_21)
         font = QtGui.QFont()
         font.setPointSize(11)
         self.checkBoxWritevalues.setFont(font)
         self.checkBoxWritevalues.setObjectName("checkBoxWritevalues")
         self.verticalLayout_13.addWidget(self.checkBoxWritevalues)
+
+        self.checkBoxWritethresh = QtWidgets.QCheckBox(self.groupBox_21)
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.checkBoxWritethresh.setFont(font)
+        self.checkBoxWritethresh.setObjectName("checkBoxWritethresh")
+        self.verticalLayout_13.addWidget(self.checkBoxWritethresh)
+
         self.verticalLayout_2.addWidget(self.groupBox_21)
         self.groupBox_22 = QtWidgets.QGroupBox(self.frameLeft)
         font = QtGui.QFont()
@@ -925,13 +957,7 @@ class Ui_MainWindow(object):
             self.variableDict['designProb'] = float(self.lineEditDesignprob.text())
         except:
             MainWindow.statusBar().showMessage('Cannot calculate: Design Probability is empty') 
-            return False
-        #TODO make sure user can remove suggestionStimulus then tries to add/fail. This is allowed to be blank        
-        # try:
-        #     self.variableDict['suggestionStimulus'] = float(self.lineEditSuggestedstimulus.text())
-        # except:
-        #     MainWindow.statusBar().showMessage('Cannot calculate: Suggested Stimulus is empty') 
-        #     return False   
+            return False  
   
         self.variableDict['experimentModel'] = float(self.comboBoxModelform.currentIndex())
         self.variableDict['experimentDesign'] = float(self.comboBoxDesign.currentIndex())
@@ -988,6 +1014,7 @@ class Ui_MainWindow(object):
         self.checkBoxShowmargin.setText(_translate("MainWindow", "show margin"))
         self.checkBoxFreezeaxes.setText(_translate("MainWindow", "freeze axes"))
         self.checkBoxWritevalues.setText(_translate("MainWindow", "write values"))
+        self.checkBoxWritethresh.setText(_translate("MainWindow", "threshold"))
         self.groupBox_22.setTitle(_translate("MainWindow", "Labels"))
         self.label_11.setText(_translate("MainWindow", "x-axis"))
         self.label_10.setText(_translate("MainWindow", "y-axis"))
@@ -1013,7 +1040,6 @@ class Ui_MainWindow(object):
         self.previousTab = self.tabWidget.currentIndex()
 
     def initialImport(self, MainWindow):
-        #TODO fix font scaling
         try:
             finput=open("tsconfig.txt","r")
             lines=finput.readlines()
@@ -1053,8 +1079,6 @@ class Ui_MainWindow(object):
                             self.comboBoxDesign.setCurrentText("d optimal")
                         elif (vals[1].strip())[0]=='s':
                             self.comboBoxDesign.setCurrentText("sigma optimal")
-                    # if vals[0].find("fontsize") > -1:
-                    #     font.nametofont('TkDefaultFont').configure(size=vals[1].strip())
                     if vals[0].find("guisize") > -1:
                         size=vals[1].strip().split('x')
                         MainWindow.resize(int(size[0]), int(size[1]))
